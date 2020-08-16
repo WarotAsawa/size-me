@@ -2,7 +2,7 @@
 
 **SIZE-ME** is a simple web-application which help you create a sizing for your Virtualization or Container Environment. **SIZE-ME** also provide very beautifil report and recommend a right sizing to spped up your work.
 
-![Home Page](public/assets/img/home-sc.jpg?raw=true)
+![Home Page](public/assets/img/home-sc.png?raw=true)
 
 ## Prerequisite
 
