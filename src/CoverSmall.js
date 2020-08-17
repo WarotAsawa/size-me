@@ -8,7 +8,7 @@ function CoverSmall(prop) {
         <div className="row">
           <div className="col-md-6 my-2 text-lg-left text-center align-self-center">
             <h1 className="display-2"><i className="fa fa-fw fa-cube"></i>SIZE ME</h1>
-            <p className="lead">Collest way to create a sizing for your Virtualization and Container environment.</p>
+            <p className="lead">Coolest way to create a sizing for your Virtualization and Container environment.</p>
             <div className="row mt-2"></div>
           </div>
           <div className="col-lg-6">
