@@ -10,7 +10,7 @@ function HomeContent() {
             <img className="img-fluid d-block mx-auto" src="/assets/img/vm-cover.svg" alt="Stateless Cover" height="100%"></img> 
           </div>
           <div className="col-md-7 align-self-center order-1 order-md-2 my-3 text-md-left text-center">
-            <h2>VIRTULIZATION SIZER</h2>
+            <h2>VIRTUALIZATION SIZER</h2>
             <p className="my-4">Simply imput your Virtualization resources requirement, node specification and cluster size and this tool will recommend the right sizing for you.</p>
             <a className="btn btn-secondary text-dark" onClick={() => history.push('/vm-sizer')}>SIZE NOW</a>
           </div>

@@ -126,7 +126,7 @@ function ContainerSummary(props) {
     				</div>
   				</Col>
 				<Col boarder='secondary'>
-    				<div className='bg-secondary text-dark py-2 px-2' style={{fontWeight:'900'}}>No Node Down Specification:</div>
+    				<div className='bg-secondary text-dark py-2 px-2' style={{fontWeight:'900'}}>{proposedNode+" Nodes Spec"}</div>
     				<div>
 					<ListGroup variant="flush">
 						<ListGroup.Item className='d-flex justify-content-between align-items-center'>
@@ -154,7 +154,7 @@ function ContainerSummary(props) {
     				</div>
   				</Col>
 				<Col boarder='secondary'>
-    				<div className='bg-info text-dark py-2 px-2' style={{fontWeight:'900'}}>{redundantNode} Node Down Specification:</div>
+    				<div className='bg-info text-dark py-2 px-2' style={{fontWeight:'900'}}>{(proposedNode-redundantNode)+" Nodes Spec ( "+redundantNode+" Nodes Down )"}</div>
     				<div>
 						<ListGroup variant="flush">
 							<ListGroup.Item className='d-flex justify-content-between align-items-center'>

@@ -19,7 +19,7 @@ function Topbar() {
         <Nav></Nav>
         <Nav>
           <NavDropdown variant='dark' className='bg-dark' style={{fontWeight:'900'}} title="SIZER MENU" id="basic-nav-dropdown">
-            <NavDropdown.Item onClick={() => history.push('/vm-sizer')}>Virtulization Sizer</NavDropdown.Item>
+            <NavDropdown.Item onClick={() => history.push('/vm-sizer')}>Virtualization Sizer</NavDropdown.Item>
             <NavDropdown.Item onClick={() => history.push('/container-sizer')}>Container Sizer</NavDropdown.Item>
           </NavDropdown>
         </Nav>
