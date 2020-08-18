@@ -1,7 +1,8 @@
 import React from 'react';
 import { Row, Col, ListGroup, Button, OverlayTrigger, Popover } from 'react-bootstrap';
 import { SpecToolTip, RecommendToolTip } from './SizerToolTip'
-//import { CopyToClipBoard } from './CopyToClipBoard';
+import { DownloadString } from './DownloadString';
+
 const specPopOver = (
 	<Popover className='bg-dark' id="popover-dark">
 	  <Popover.Title className='bg-dark' as="h3">Summary Legend:</Popover.Title>
@@ -64,6 +65,49 @@ function DiffAlert(target, value) {
 		);
 	}
 }
+
+function GetNodeSpecString(nodeCPU,nodeSocket,nodeCore,nodeGHz,nodeDIMMSlot,nodeDIMMSize,nodeMemory) {
+	return (
+	"Node's Specification: ,\n" +
+	"CPU Model: ,"+nodeSocket+" x "+nodeCPU + "\n" +
+	"Total CPU Cores: ,"+nodeCore+" Cores" + "\n" +
+	"Total CPU GHZ: ,"+nodeGHz+" GHz" + "\n" +
+	"Memory Configuration: ,"+nodeDIMMSlot+" x "+nodeDIMMSize+" GB DDR4" + "\n" +
+	"Total Memory: ,"+ nodeMemory+" GB"
+	);
+}
+
+function GetClusterSpec(clusterCPUAll,clusterCPUDown,nodeGHz,nodeCore,nodeSocket,clustervCPUAll,clustervCPUDown,clusterMemoryAll,clusterMemoryDown,proposedStorage,effectiveStorage,proposedNode,redundantNode) {
+	return (
+		"Resources,"+proposedNode+" Nodes Specification,"+(proposedNode-redundantNode)+" Nodes Specification ("+redundantNode+" Node Down)\n"+
+		"Total CPU Cores: ,"+clusterCPUAll+" Cores,"+clusterCPUDown+" Cores\n" +
+		"Total CPU GHZ: ,"+(nodeGHz*nodeCore*nodeSocket*(proposedNode)).toFixed(1)+" GHz,"+(nodeGHz*nodeCore*nodeSocket*(proposedNode-redundantNode)).toFixed(1)+" GHz\n" +
+		"Total vCPU Cores: ,"+clustervCPUAll+" Cores,"+clustervCPUDown+" Cores\n" +
+		"Total Memory: ,"+clusterMemoryAll+" GB,"+clusterMemoryDown+" GB\n" +
+		"Total Usable Capacity: ,"+proposedStorage+" TB,"+proposedStorage+" TB\n" +
+		"Total Effective Capacity: ,"+effectiveStorage+" TB,"+effectiveStorage+" TB"
+	);
+}
+
+function GetWorkloadList(list,totalvCPU,totalMemory,totalStorage) {
+	let output = "Name,CPU (m),Memory (MiB),Persistence Volume (GiB)\n";
+	for (let i = 0; i<list.length;i++) {
+		output += list[i].name+","+list[i].vcpu*1000+","+list[i].vmemory/0.001049+","+list[i].vdisk/0.001074+"\n";
+	}
+	output += "Total Resources: ,"+totalvCPU*1000+','+totalMemory/0.001049+','+totalStorage/0.001074;
+	return output;
+}
+
+function GetComparison(cpuOccupancy,clustervCPUDown,totalvCPU,memoryOccupancy,clusterMemoryDown,totalMemory,storageOccupancy,effectiveStorage,totalStorage) {
+	let output =
+		"Specification,Usable Resources,Total Workload,Resource Diff\n"+
+		"CPU (m Cores),"+(cpuOccupancy * clustervCPUDown*1000).toFixed(1)+","+totalvCPU*1000+","+((cpuOccupancy * clustervCPUDown*1000)-totalvCPU*1000).toFixed(1)+"\n"+
+		"Memory (MiB),"+(memoryOccupancy * clusterMemoryDown/0.001049)+","+totalMemory/0.001049+","+((memoryOccupancy * clusterMemoryDown/0.001049)-totalMemory/0.001049)+"\n"+
+		"Effective Capacity (GiB),"+(storageOccupancy * effectiveStorage/0.001074)+","+totalStorage/0.001074+","+ ((storageOccupancy * effectiveStorage/0.001074)-totalStorage/0.001074)+"\n"
+	;
+	console.log(output);
+	return output;
+}
 function ContainerSummary(props) {
 	var app = props.app;
 
@@ -102,14 +146,21 @@ function ContainerSummary(props) {
 	//recommend nodes
 	var cpuRecommend = Math.ceil(totalCPU/cpuOccupancy/(nodeCore*nodeSocket))+redundantNode;
 	var memoryRecommend = Math.ceil(totalMemory/memoryOccupancy/(nodeDIMMSlot*nodeDIMMSize))+redundantNode;
-  	return(
+
+  //Set Download String
+	var nodeSpecString = GetNodeSpecString(nodeCPU,nodeSocket,nodeCore,nodeGHz,nodeDIMMSlot,nodeDIMMSize,nodeMemory);
+	var clusterSpecString = GetClusterSpec(clusterCPUAll,clusterCPUDown,nodeGHz,nodeCore,nodeSocket,clustervCPUAll,clustervCPUDown,clusterMemoryAll,clusterMemoryDown,proposedStorage,effectiveStorage,proposedNode,redundantNode);
+	var workloadList = GetWorkloadList(app.workloads,totalvCPU,totalMemory,totalStorage);
+	var compareList = GetComparison(cpuOccupancy,clustervCPUDown,totalvCPU,memoryOccupancy,clusterMemoryDown,totalMemory,storageOccupancy,effectiveStorage,totalStorage);  
+	
+	return(
 		<Col>
 			<div className='row my-3'><h3 className='my-auto'>Sizing Summary:</h3></div>
 			{/* Sizing Summary */}
 			<div className='row my-auto'>
 				<h4 className='my-auto'>Cluster's Summary:</h4>
 				<OverlayTrigger trigger={['hover','focus']} placement="right" overlay={specPopOver}>
-    				<Button className='mx-2 py-0 px-1' variant="dark">?</Button>
+    				<Button className='mx-2 py-0 px-1 mb-1' variant="dark">?</Button>
   				</OverlayTrigger>
 			</div>
 			<Row className='mb-2'>		
@@ -122,7 +173,11 @@ function ContainerSummary(props) {
 							<ListGroup.Item className='d-flex justify-content-between align-items-center'>{"Total CPU GHZ: "+nodeGHz+" GHz"}</ListGroup.Item>
 							<ListGroup.Item className='d-flex justify-content-between align-items-center'>{"Memory Configuration: "+nodeDIMMSlot+" x "+nodeDIMMSize+" GB DDR4"}</ListGroup.Item>
 							<ListGroup.Item className='d-flex justify-content-between align-items-center'>{"Total Memory: "+ nodeMemory+" GB"}</ListGroup.Item>
-     					</ListGroup>
+							<ListGroup.Item className='d-flex justify-content-between align-items-center'>
+								<Button className = 'px-1 mx-1' variant='primary' onClick={() => {DownloadString(nodeSpecString,"text","node-spec.csv")}} >Node spec .csv</Button>
+								<Button className = 'px-1 mx-1' variant='secondary' onClick={() => {DownloadString(clusterSpecString,"text","cluster-spec.csv")}} >Cluster spec .csv</Button>
+							</ListGroup.Item>
+						</ListGroup>
     				</div>
   				</Col>
 				<Col boarder='secondary'>
@@ -133,7 +188,7 @@ function ContainerSummary(props) {
 							{"Total CPU Cores: "+clusterCPUAll+" Cores"}							
 							{ShowAlertRatio(totalvCPU,clusterCPUDown,cpuOccupancy,v2p)}	
 							</ListGroup.Item>
-							<ListGroup.Item className='d-flex justify-content-between align-items-center'>{"Total CPU GHZ: "+(nodeGHz*nodeSocket*(proposedNode)).toFixed(1)+" GHz"}</ListGroup.Item>
+							<ListGroup.Item className='d-flex justify-content-between align-items-center'>{"Total CPU GHZ: "+(nodeGHz*nodeCore*nodeSocket*(proposedNode)).toFixed(1)+" GHz"}</ListGroup.Item>
 							<ListGroup.Item className='d-flex justify-content-between align-items-center'>
 								{"Total vCPU Cores: "+clustervCPUAll+" Cores"}
 							 	{ShowAlertRatio(totalvCPU,clusterCPUDown,cpuOccupancy,v2p)}
@@ -161,7 +216,7 @@ function ContainerSummary(props) {
 								{"Total CPU Cores: "+clusterCPUDown+" Cores"}
 								{ShowAlertRatio(totalvCPU,clusterCPUDown,cpuOccupancy,v2p)}	
 							</ListGroup.Item>
-							<ListGroup.Item className='d-flex justify-content-between align-items-center'>{"Total CPU GHZ: "+(nodeGHz*nodeSocket*(proposedNode-redundantNode)).toFixed(1)+" GHz"}</ListGroup.Item>
+							<ListGroup.Item className='d-flex justify-content-between align-items-center'>{"Total CPU GHZ: "+(nodeGHz*nodeCore*nodeSocket*(proposedNode-redundantNode)).toFixed(1)+" GHz"}</ListGroup.Item>
 							<ListGroup.Item className='d-flex justify-content-between align-items-center'>
 								{"Total vCPU Cores: "+clustervCPUDown+" Cores"}
 							 	{ShowAlertRatio(totalvCPU,clusterCPUDown,cpuOccupancy,v2p)}
@@ -186,7 +241,7 @@ function ContainerSummary(props) {
 			<div className='row my-auto'>
 				<h4 className='my-auto'>Recommendation:</h4>
 				<OverlayTrigger trigger={['hover','focus']} placement="right" overlay={recommendPopOver}>
-    				<Button className='mx-2 py-0 px-1' variant="dark">?</Button>
+    				<Button className='mx-2 py-0 px-1 mb-1' variant="dark">?</Button>
   				</OverlayTrigger>
 			</div>
 			<div className='row my-auto text-muted'><h5>Based on your node specification and fault tolerant and targetted utilization</h5></div>
@@ -206,6 +261,10 @@ function ContainerSummary(props) {
 							<ListGroup.Item className='d-flex justify-content-between align-items-center'>
 								{"Overall Recommendation: "+Math.max(memoryRecommend,cpuRecommend) + " Nodes"}
 								{DiffAlert(Math.max(memoryRecommend,cpuRecommend),proposedNode)}
+							</ListGroup.Item>
+							<ListGroup.Item className='d-flex justify-content-between align-items-center'>
+								<Button className = 'px-1 mx-1' variant='primary' onClick={() => {DownloadString(workloadList,"text","workloads-list.csv")}} >Workload List .csv</Button>
+								<Button className = 'px-1 mx-1' variant='secondary' onClick={() => {DownloadString(compareList,"text","spec-comparison.csv")}} >Comparison .csv</Button>
 							</ListGroup.Item>
      					</ListGroup>
     				</div>
