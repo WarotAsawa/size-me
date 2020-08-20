@@ -70,9 +70,9 @@ function GetNodeSpecString(nodeCPU,nodeSocket,nodeCore,nodeGHz,nodeDIMMSlot,node
 	return (
 	"Node's Specification: ,\n" +
 	"CPU Model: ,"+nodeSocket+" x "+nodeCPU + "\n" +
-	"Total CPU Cores: ,"+nodeCore+" Cores" + "\n" +
-	"Total CPU GHZ: ,"+nodeGHz+" GHz" + "\n" +
-	"Memory Configuration: ,"+nodeDIMMSlot+" x "+nodeDIMMSize+" GB DDR4" + "\n" +
+	"Total CPU Cores: ,"+nodeCore+" Cores\n" +
+	"Total CPU GHZ: ,"+nodeGHz+" GHz\n" +
+	"Memory Configuration: ,"+nodeDIMMSlot+" x "+nodeDIMMSize+" GB DDR4\n" +
 	"Total Memory: ,"+ nodeMemory+" GB"
 	);
 }
@@ -105,7 +105,6 @@ function GetComparison(cpuOccupancy,clustervCPUDown,totalvCPU,memoryOccupancy,cl
 		"Memory (GB),"+(memoryOccupancy * clusterMemoryDown)+","+totalMemory+","+((memoryOccupancy * clusterMemoryDown)-totalMemory)+"\n"+
 		"Effective Capacity (TB),"+(storageOccupancy * effectiveStorage)+","+totalStorage+","+ ((storageOccupancy * effectiveStorage)-totalStorage)+"\n"
 	;
-	console.log(output);
 	return output;
 }
 function VMSummary(props) {

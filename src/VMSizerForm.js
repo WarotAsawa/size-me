@@ -1,14 +1,17 @@
 import React, {useState} from 'react';
 import { Formik, Field, Form, ErrorMessage, FieldArray } from "formik";
-import { Row, Col } from 'react-bootstrap';
+import { Row, Col, Button, Card } from 'react-bootstrap';
+
 import * as Yup from 'yup';
 
 import VMSummary from './VMSummary';
 import UtilizationSummary from './UtilizationSummary';
+import { DownloadString } from './DownloadString';
+import { EncryptObject, DecryptObject } from './Crypto';
 
 import intelDatabase from './intel.json';
 
-const initialValues =	{
+var initialValues =	{
 	proposedNode:"4",
 	redundantNode:"1",
 	proposedStorage: "50",
@@ -87,6 +90,7 @@ function VMSizerForm() {
 			<UtilizationSummary app={app}></UtilizationSummary>
 			<VMSummary app={app}>{" "}</VMSummary>
 			<Formik
+				enableReinitialize='true'
 				initialValues={initialValues}
 				validationSchema={ApplicationSpecSchema}
 				onSubmit={async values => {
@@ -95,7 +99,7 @@ function VMSizerForm() {
 					setApp(values);
 				}}
 			>
-			{({ values, handleChange }) => (
+			{({ values, handleChange , resetForm}) => (
 				<Form inline="true">
 					{/* Header */}
 					<Row className="my-2 d-flex justify-content-between">
@@ -261,7 +265,34 @@ function VMSizerForm() {
 							</Row>
 						</Col>
 					</Row>
-					<button type="submit" className="btn btn-secondary my-1">SIZE ME !</button>
+					<Row><button type="submit" className="btn btn-secondary my-1">SIZE ME !</button></Row>
+					<Card className='w-50 mt-3'>
+					<Card.Header className='bg-secondary text-dark'><h3 style={{fontWeight:'900'}}>SAVE / LOAD SIZING</h3></Card.Header>
+					<Card.Body>
+					<Row className='my-2'>
+						<b className='my-auto mx-2'>SAVE SIZING:	</b>
+					<Button className = 'px-1 mx-2' variant='primary' onClick={() => {DownloadString(EncryptObject(values, 's!ze-me-!q2w3e4r'),"text","vm-sizing.sav")}} >SAVE AS FILE</Button>
+					</Row>
+					<Row className='my-2'>
+						<b className='my-auto mx-2'>LOAD SIZING:	</b>
+						<input type="file" onChange={(event) => { 
+							let file = event.currentTarget.files[0];
+							let reader = new FileReader();
+							reader.onload = function(event) {
+								// The file's text will be printed here
+								let result = event.target.result;
+								//console.log(result);
+								let data = DecryptObject(result, 's!ze-me-!q2w3e4r');
+								//console.log(data)
+								resetForm({values: data});
+								setApp(data);
+							};
+							let text = reader.readAsText(file);
+                  		}} className="my-auto mx-2" />
+					</Row>
+					</Card.Body>
+					<Card.Footer className='bg-secondary'></Card.Footer>
+					</Card>
 				</Form>
 			)}
 			</Formik>
