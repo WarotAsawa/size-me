@@ -13,7 +13,7 @@ import intelDatabase from './intel.json';
 const initialValues =	{
 	proposedNode:"3",
 	redundantNode:"1",
-	proposedStorage: "4",
+	proposedStorage: "10",
 	cpuOccupancy:"70",
 	memoryOccupancy:"70",
 	storageOccupancy:"70",
@@ -23,21 +23,25 @@ const initialValues =	{
 	dimmSlot:"6",
 	dataReduction:"1.2",
 	v2p:"2",
-	workloads: [{name: 'apache-wep', vcpu: '500', vmemory: '1024', vdisk: '50'},{name: 'log-collector', vcpu: '4000', vmemory: '2048', vdisk: '1024'},{name: 'mongoDB', vcpu: '4000', vmemory: '8192', vdisk: '2048'}],
+	workloads: [{name: 'apache-wep', replicas: '5',vcpu: '250', vmemory: '1024', vdisk: '50'},{name: 'log-collector', replicas: '1', vcpu: '4000', vmemory: '2048', vdisk: '1024'},{name: 'mongoDB', replicas: '3', vcpu: '3500', vmemory: '8192', vdisk: '2048'}],
 	selectedCPUSpec:intelDatabase.find(db => {return db.model === "3204"})
 };
 
 function FormatInitialValue(values) {
     let newValue = JSON.parse(JSON.stringify(values));
     for (let i = 0; i<newValue.workloads.length; i++) {
-        newValue.workloads[i].vcpu = parseFloat(newValue.workloads[i].vcpu)*0.001;
-        newValue.workloads[i].vmemory = parseFloat(newValue.workloads[i].vmemory)*0.001049;
-        newValue.workloads[i].vdisk = parseFloat(newValue.workloads[i].vdisk)*0.001074;
+		let replicas = 1;
+		if (('replicas' in newValue.workloads[i])) replicas = parseFloat(newValue.workloads[i].replicas);
+        newValue.workloads[i].vcpu = parseFloat(newValue.workloads[i].vcpu)*0.001*replicas;
+        newValue.workloads[i].vmemory = parseFloat(newValue.workloads[i].vmemory)*0.001049*replicas;
+        newValue.workloads[i].vdisk = parseFloat(newValue.workloads[i].vdisk)*0.001074*replicas;
     }
     return newValue;
 }
 function ContainerSizerForm() {
 	const [app, setApp] = useState(FormatInitialValue(initialValues));
+	const [dataFile, setDataFile] = useState(initialValues);
+	const [loadFileError, setLoadFileError] = useState(false);
 	//YUP Error Checking
 	let ApplicationSpecSchema = Yup.object().shape({
 		proposedStorage: Yup.number()
@@ -81,6 +85,10 @@ function ContainerSizerForm() {
 			.min(1, 'Too Short !')
 			.max(100, 'Too Long !')
 			.required('Workload Name Required'),
+			replicas: Yup.number().integer()
+			.min(1, 'Must be at least 1')
+			.max(100, 'Must be less than 100')
+			.required('Replicas Required'),
 			vcpu: Yup.number().integer()
 			.min(0, 'Must be positive number')
 			.required('vCPU Required'),
@@ -116,7 +124,7 @@ function ContainerSizerForm() {
 					</Row>
 					{/* Workload List Block */}
 					<FieldArray name="workloads">
-						{({ insert, remove, push }) => (
+						{({ remove, push }) => (
 							<div>
 								<Row className='my-2'>
 									<div className='my-auto'><h3>Workload List:</h3></div>
@@ -124,25 +132,30 @@ function ContainerSizerForm() {
 										<button
 											type="button"
 											className="btn btn-primary float-right"
-											onClick={() => push({name: 'new-workload', vcpu: '100', vmemory: '128', vdisk: '5'})}
+											onClick={() => push({name: 'new-workload', replicas: '1', vcpu: '100', vmemory: '128', vdisk: '5'})}
 										>
 											+ Add More Workload
 										</button>
 									</div>
 								</Row>
 								<Row className='my-1'>
-									<div className="col-4"><h5>Workload Name:</h5></div>
-									<div className="col-2"><h5>CPU:</h5></div>
-									<div className="col-2"><h5>Memory:</h5></div>
-									<div className="col-3"><h5>Persistence Volume:</h5></div>
+									<div className="col-3"><h5>Workload Name:</h5></div>
+									<div className="col-1"><h5>Replicas:</h5></div>
+									<div className="col-2"><h5>CPU/Pod:</h5></div>
+									<div className="col-2"><h5>Memory/Pod:</h5></div>
+									<div className="col-3"><h5>PV Size/Pod:</h5></div>
 									<div className="col-1"></div>
 								</Row>
 								{values.workloads.length > 0 &&
 								values.workloads.map((workload, index) => (
 									<div className='row my-1' key={index}>
-										<div className="col-4 my-auto">
+										<div className="col-3 my-auto">
 											<Field className="w-100" name={`workloads.${index}.name`}/>
 											<Row className='text-danger'><ErrorMessage name={`workloads.${index}.name`}/></Row>
+										</div>
+										<div className="col-1 my-auto">
+											<Field className="w-100" type='number' name={`workloads.${index}.replicas`}/>
+											<Row className='text-danger'><ErrorMessage name={`workloads.${index}.replicas`}/></Row>
 										</div>
 										<div className="col-2 my-auto">
 											<Field className="w-75" name={`workloads.${index}.vcpu`}/>
@@ -172,9 +185,9 @@ function ContainerSizerForm() {
 								))}
 								<div className='row my-3'>
 									<h5 className="col-4 my-auto text-right font-weight-bold">Totol Resouces:</h5>
-									<h5 className="col-2 my-auto text-info my-auto font-weight-bold">{values.workloads.reduce((a,b) => (a+parseInt(b['vcpu'])),0) + 'm'}</h5>
-									<h5 className="col-2 my-auto text-info my-auto font-weight-bold">{values.workloads.reduce((a,b) => (a+parseInt(b['vmemory'])),0) + 'Mi'}</h5>
-									<h5 className="col-3 my-auto text-info my-auto font-weight-bold">{values.workloads.reduce((a,b) => (a+parseFloat(b['vdisk'])),0) + 'Gi'}</h5>
+									<h5 className="col-2 my-auto text-info my-auto font-weight-bold">{values.workloads.reduce((a,b) => (a+parseInt(b['vcpu'])*parseInt(b['replicas'])),0) + 'm'}</h5>
+									<h5 className="col-2 my-auto text-info my-auto font-weight-bold">{values.workloads.reduce((a,b) => (a+parseInt(b['vmemory'])*parseInt(b['replicas'])),0) + 'Mi'}</h5>
+									<h5 className="col-3 my-auto text-info my-auto font-weight-bold">{values.workloads.reduce((a,b) => (a+parseFloat(b['vdisk'])*parseInt(b['replicas'])),0) + 'Gi'}</h5>
 									<div className="col-1 my-auto"></div>
 								</div>
 							</div>
@@ -291,21 +304,40 @@ function ContainerSizerForm() {
 					<Button className = 'px-1 mx-2' variant='primary' onClick={() => {DownloadString(EncryptObject(values, 's!ze-me-!q2w3e4r'),"text","container-sizing.sav")}} >SAVE AS FILE</Button>
 					</Row>
 					<Row className='my-2'>
-						<b className='my-auto mx-2'>LOAD SIZING:	</b>
-						<input type="file" onChange={(event) => { 
+						<b className='my-auto col-3'>LOAD SIZING:	</b>
+						<input type="file"  className="my-auto col-5" onChange={(event) => { 
 							let file = event.currentTarget.files[0];
 							let reader = new FileReader();
 							reader.onload = function(event) {
-								//The file's text will be printed here
+								// The file's text will be printed here
 								let result = event.target.result;
+								setDataFile(result);
 								//console.log(result);
-								let data = DecryptObject(result, 's!ze-me-!q2w3e4r');
-								//console.log(data)
+							};
+							try { let text = reader.readAsText(file);} 
+							catch(err)  { console.log("Read File Error");}
+
+                  		}}/>
+						<Button 
+						className = 'px-1 col-2' 
+						variant='primary' 
+						onClick={() => {
+							//console.log(dataFile);	
+							let data = DecryptObject(dataFile, 's!ze-me-!q2w3e4r');
+							if ('workloads' in data) {
+								for (let i = 0; i<data.workloads.length; i++) {
+									if (!('replicas' in data.workloads[i])) data.workloads[i].replicas = 1;
+								}
 								resetForm({values: data});
 								setApp(FormatInitialValue(data));
-							};
-							let text = reader.readAsText(file);
-                  		}} className="my-auto mx-2" />
+								setLoadFileError(false);
+							} else {
+								setLoadFileError(true);
+							}
+						}} >LOAD NOW !</Button>
+					</Row>
+					<Row>
+					<b className='text-danger mx-2'>{(loadFileError ? "Cannot Load Save File" : "")}</b>
 					</Row>
 					</Card.Body>
 					<Card.Footer className='bg-secondary'></Card.Footer>

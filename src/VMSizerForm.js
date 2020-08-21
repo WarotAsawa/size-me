@@ -30,6 +30,8 @@ var initialValues =	{
 
 function VMSizerForm() {
 	const [app, setApp] = useState(initialValues);
+	const [dataFile, setDataFile] = useState(initialValues);
+	const [loadFileError, setLoadFileError] = useState(false);
 	//YUP Error Checking
 	let ApplicationSpecSchema = Yup.object().shape({
 		proposedStorage: Yup.number()
@@ -274,21 +276,37 @@ function VMSizerForm() {
 					<Button className = 'px-1 mx-2' variant='primary' onClick={() => {DownloadString(EncryptObject(values, 's!ze-me-!q2w3e4r'),"text","vm-sizing.sav")}} >SAVE AS FILE</Button>
 					</Row>
 					<Row className='my-2'>
-						<b className='my-auto mx-2'>LOAD SIZING:	</b>
-						<input type="file" onChange={(event) => { 
-							let file = event.currentTarget.files[0];
+						<b className='my-auto col-3'>LOAD SIZING:	</b>
+						<input type="file"  className="my-auto col-5" onChange={(event) => { 
+							let file = event.currentTarget.files[0]
 							let reader = new FileReader();
 							reader.onload = function(event) {
 								// The file's text will be printed here
 								let result = event.target.result;
+								setDataFile(result);
 								//console.log(result);
-								let data = DecryptObject(result, 's!ze-me-!q2w3e4r');
-								//console.log(data)
+							};
+							try { let text = reader.readAsText(file);} 
+							catch(err)  { console.log("Read File Error");}
+
+                  		}}/>
+						<Button 
+						className = 'px-1 col-2' 
+						variant='primary' 
+						onClick={() => {
+							//console.log(dataFile);	
+							let data = DecryptObject(dataFile, 's!ze-me-!q2w3e4r');
+							if ('workloads' in data) {
 								resetForm({values: data});
 								setApp(data);
-							};
-							let text = reader.readAsText(file);
-                  		}} className="my-auto mx-2" />
+								setLoadFileError(false);
+							} else {
+								setLoadFileError(true);
+							}
+						}} >LOAD NOW !</Button>
+					</Row>
+					<Row>
+					<b className='text-danger mx-2'>{(loadFileError ? "Cannot Load Save File" : "")}</b>
 					</Row>
 					</Card.Body>
 					<Card.Footer className='bg-secondary'></Card.Footer>
