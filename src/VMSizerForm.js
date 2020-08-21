@@ -256,11 +256,11 @@ function VMSizerForm() {
 								</select>
 							</Row>
 							<Row className='my-1'>
-								<h5 className='w-75 my-auto'>DIMM Slots (Must be bewtween 1 to 12*Sockets):</h5><Field className='w-25' name="dimmSlot" type='number'/>
+								<h5 className='w-75 my-auto'>DIMM Slots (Must be between 1 to 12*Sockets):</h5><Field className='w-25' name="dimmSlot" type='number'/>
 								<Row className='text-danger'><ErrorMessage name="dimmSlot"/></Row>
 							</Row>
 							<Row className='my-1'>
-								<h5 className='w-75 my-auto'>Data Reduction Ratio (Ex: Imput 2 as 2:1):</h5><Field className='w-25' name="dataReduction" type='number'/>
+								<h5 className='w-75 my-auto'>Data Reduction Ratio (Ex: Input 2 as 2:1):</h5><Field className='w-25' name="dataReduction" type='number'/>
 								<Row className='text-danger'><ErrorMessage name="dataReduction"/></Row>
 							</Row>
 						</Col>
